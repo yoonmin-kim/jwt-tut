@@ -2,6 +2,7 @@ package com.hello.jwttut.config.jwt;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Date;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -14,7 +15,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hello.jwttut.config.auth.PrincipalDetails;
 import com.hello.jwttut.model.User;
 
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
@@ -55,6 +59,16 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 	@Override
 	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response,
 		FilterChain chain, Authentication authResult) throws IOException, ServletException {
-		super.successfulAuthentication(request, response, chain, authResult);
+
+		PrincipalDetails principalDetails = (PrincipalDetails)authResult.getPrincipal();
+
+		String jwtToken = JWT.create()
+			.withSubject("cos토큰") // 토큰 이름
+			.withExpiresAt(new Date(System.currentTimeMillis() + (60 * 1000)))
+			.withClaim("id", principalDetails.getUser().getId())
+			.withClaim("username", principalDetails.getUser().getUsername())
+			.sign(Algorithm.HMAC512("cos"));
+
+		response.addHeader("Authorization", "Bearer " + jwtToken);
 	}
 }
